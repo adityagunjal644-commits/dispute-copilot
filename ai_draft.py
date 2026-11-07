@@ -47,6 +47,8 @@ Reply with JSON only, using exactly these keys:
 - "evidence_used": list of short strings, each naming a fact you relied on
 - "reasoning": 2-3 sentences explaining the decision
 - "draft_message": a polite, professional message to send to PayPal/the buyer
+- "evidence_plan": an object with three keys. "items": a list of up to 4 short strings naming extra evidence the merchant could realistically collect that is NOT already in the records (for example buyer chat history, photos, courier call logs). If the records already hold strong proof, return an empty list. "days_needed": a whole number, the days needed to collect it. "win_boost": a number from 0 to 0.25, how much that evidence would raise win_probability. If "items" is empty, days_needed and win_boost must be 0.
+- "scenario_notes": an object with four keys: "fight", "partial_refund", "accept", "wait". Each value is an object with two short sentences: "risk" (the main risk of that option for this case) and "next_step" (the single next action).
 """
 
 STRESS_PROMPT = """You are a sharp lawyer representing the BUYER in a PayPal dispute.
@@ -107,6 +109,38 @@ def _num(value, default, lo=0.0, hi=1.0):
     return max(lo, min(v, hi))
 
 
+def _clean_plan(result):
+    plan = result.get("evidence_plan")
+    plan = plan if isinstance(plan, dict) else {}
+
+    items = plan.get("items")
+    items = [str(i) for i in items][:4] if isinstance(items, list) else []
+
+    try:
+        days = int(plan.get("days_needed", 3))
+    except (TypeError, ValueError):
+        days = 3
+    days = max(0, min(days, 30))
+
+    result["evidence_plan"] = {
+        "items": items,
+        "days_needed": days,
+        "win_boost": _num(plan.get("win_boost"), 0.1, 0.0, 0.25),
+    }
+
+    notes = result.get("scenario_notes")
+    notes = notes if isinstance(notes, dict) else {}
+    clean = {}
+    for key in ("fight", "partial_refund", "accept", "wait"):
+        n = notes.get(key)
+        n = n if isinstance(n, dict) else {}
+        clean[key] = {
+            "risk": str(n.get("risk") or ""),
+            "next_step": str(n.get("next_step") or ""),
+        }
+    result["scenario_notes"] = clean
+
+
 def _normalize(result):
     flag = bool(result.get("needs_human_review"))
     if result.get("strategy") not in ("fight", "offer_refund", "accept"):
@@ -121,6 +155,7 @@ def _normalize(result):
         result["evidence_used"] = []
     result["reasoning"] = str(result.get("reasoning") or "")
     result["draft_message"] = str(result.get("draft_message") or "")
+    _clean_plan(result)
     return result
 
 

@@ -118,17 +118,20 @@
   ul.weak li { padding: 5px 0 5px 24px; position: relative; font-size: 13.5px; }
   ul.weak li::before { content: "✕"; position: absolute; left: 0; color: var(--red); font-weight: 700; }
 
-  /* Fight or fold */
-  .calc-inputs { display: flex; gap: 14px; flex-wrap: wrap; margin-bottom: 12px; }
-  .calc-inputs label { font-size: 12px; color: var(--muted); font-weight: 600; display: flex; flex-direction: column; gap: 4px; }
-  .calc-inputs input { width: 140px; padding: 7px 9px; border: 1px solid #cfd8e6; border-radius: 8px; font-size: 14px; font-family: inherit; }
-  .calc-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-  .calc { border-radius: 12px; padding: 14px; background: #fff; border: 2px solid #e3e8f1; }
-  .calc.best { border-color: var(--green); background: var(--green-soft); }
-  .calc .k { font-size: 12px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; }
-  .calc .big { font-size: 24px; font-weight: 700; margin-top: 4px; }
-  .calc .n { font-size: 12.5px; color: var(--muted); margin-top: 2px; }
-  #c-verdict { margin-top: 12px; font-size: 14px; font-weight: 600; line-height: 1.5; }
+  /* What-if simulator */
+  .sim-inputs { display: flex; gap: 18px; flex-wrap: wrap; align-items: flex-end; margin-bottom: 14px; }
+  .sim-inputs label { font-size: 12px; color: var(--muted); font-weight: 600; display: flex; flex-direction: column; gap: 4px; }
+  .sim-inputs input[type=number] { width: 130px; padding: 7px 9px; border: 1px solid #cfd8e6; border-radius: 8px; font-size: 14px; font-family: inherit; }
+  .sim-inputs input[type=range] { width: 180px; }
+  .sim-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+  .scard { background: #fff; border: 2px solid #e3e8f1; border-radius: 12px; padding: 14px; }
+  .scard.best { border-color: var(--green); background: var(--green-soft); }
+  .scard.off { opacity: .65; }
+  .scard h4 { margin: 0 0 6px; font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; }
+  .scard .big { font-size: 22px; font-weight: 700; }
+  .scard .n { font-size: 12.5px; color: var(--muted); margin-top: 3px; line-height: 1.45; }
+  .scard .rk { font-size: 12.5px; margin-top: 10px; line-height: 1.5; }
+  #s-verdict { margin-top: 14px; font-size: 14px; font-weight: 600; line-height: 1.5; }
 
   textarea { width: 100%; height: 190px; padding: 12px; border: 1px solid #cfd8e6; border-radius: 10px; font-family: inherit; font-size: 14px; line-height: 1.55; resize: vertical; background: #fff; color: var(--text); }
   textarea:focus { outline: 2px solid var(--blue-soft); border-color: var(--blue); }
@@ -150,10 +153,16 @@
   #lock input { width: 100%; padding: 12px; border: 1px solid #cfd8e6; border-radius: 10px; font-size: 15px; font-family: inherit; margin-bottom: 12px; }
   #lockErr { color: var(--red); font-size: 13px; min-height: 18px; margin-bottom: 8px; }
 
+  @media (max-width: 1000px) {
+    .sim-grid { grid-template-columns: repeat(2, 1fr); }
+  }
   @media (max-width: 860px) {
     .stats { grid-template-columns: repeat(2, 1fr); }
     .result-grid { grid-template-columns: 1fr; }
     .arow { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 560px) {
+    .sim-grid { grid-template-columns: 1fr; }
   }
 </style>
 </head>
@@ -256,28 +265,20 @@
               <span class="hint">Nothing is sent until you press this button.</span>
             </div>
           </div>
-          <div class="box gap">
-            <div class="label">Fight or fold calculator</div>
-            <div class="calc-inputs">
-              <label>Your time cost to fight ($)<input type="number" id="c-time" value="10" min="0"></label>
-              <label>Extra fee if you lose ($)<input type="number" id="c-fee" value="0" min="0"></label>
-            </div>
-            <div class="calc-grid">
-              <div class="calc" id="c-fold-box">
-                <div class="k">Refund now</div>
-                <div class="big" id="c-fold"></div>
-                <div class="n">certain loss</div>
-              </div>
-              <div class="calc" id="c-fight-box">
-                <div class="k">Fight it</div>
-                <div class="big" id="c-fight"></div>
-                <div class="n" id="c-fight-n"></div>
-              </div>
-            </div>
-            <div id="c-verdict"></div>
-            <div class="hint" id="c-hint" style="margin-top:6px"></div>
-          </div>
         </div>
+      </div>
+
+      <div class="box gap" id="simBox">
+        <div class="label">What-if scenario simulator</div>
+        <div class="sim-inputs">
+          <label>Your time cost to fight ($)<input type="number" id="c-time" value="10" min="0"></label>
+          <label>Cost per day of waiting ($)<input type="number" id="c-day" value="3" min="0"></label>
+          <label>Partial refund offered: <b id="s-pct-label">50%</b><input type="range" id="s-pct" min="10" max="90" step="5" value="50"></label>
+          <label>Chance buyer accepts partial offer (%)<input type="number" id="s-acc" value="50" min="0" max="100"></label>
+        </div>
+        <div class="sim-grid" id="simGrid"></div>
+        <div id="s-verdict"></div>
+        <div class="hint" id="s-hint" style="margin-top:6px"></div>
       </div>
     </div>
   </section>
@@ -306,6 +307,9 @@ let selectedRow = null;
 let allRows = [];
 let lastResult = null;
 
+const $ = (id) => document.getElementById(id);
+const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
+const pct = (v) => Math.round(v * 100) + "%";
 const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 const chip = (text, cls) => '<span class="chip ' + cls + '">' + esc(text) + "</span>";
 
@@ -332,7 +336,7 @@ function dueInfo(v) {
 }
 
 /* ---------- Dispute queue grid ---------- */
-const gridApi = agGrid.createGrid(document.getElementById("grid"), {
+const gridApi = agGrid.createGrid($("grid"), {
   columnDefs: [
     { field: "dispute_id", headerName: "Case ID", flex: 1.5, cellStyle: { fontWeight: 600, color: "#0b1f4d" } },
     { field: "reason", headerName: "Reason", flex: 1.7, valueFormatter: (p) => prettyReason(p.value) },
@@ -365,12 +369,12 @@ const gridApi = agGrid.createGrid(document.getElementById("grid"), {
   rowHeight: 50,
   headerHeight: 46,
   animateRows: true,
-  defaultColDef: { sortable: true, filter: true, resizable: true },
+  defaultColDef: { sortable: true, filter: true, resizable: true, resizable: true },
   onRowClicked: (e) => selectDispute(e.data),
 });
 
 /* ---------- Audit log grid ---------- */
-const historyApi = agGrid.createGrid(document.getElementById("historyGrid"), {
+const historyApi = agGrid.createGrid($("historyGrid"), {
   columnDefs: [
     { field: "time", headerName: "Time", flex: 1.5, valueFormatter: (p) => (p.value ? new Date(p.value).toLocaleString() : "") },
     {
@@ -397,7 +401,7 @@ const historyApi = agGrid.createGrid(document.getElementById("historyGrid"), {
 /* ---------- helpers ---------- */
 let toastTimer = null;
 function toast(text, bad) {
-  const t = document.getElementById("toast");
+  const t = $("toast");
   t.textContent = text;
   t.className = "show " + (bad ? "bad" : "ok");
   clearTimeout(toastTimer);
@@ -409,11 +413,11 @@ async function loadImpact() {
     const r = await fetch("/api/impact");
     if (!r.ok) return;
     const d = await r.json();
-    document.getElementById("s-analyzed").textContent = d.analyzed;
-    document.getElementById("s-time").textContent = fmtMinutes(d.minutes_saved);
-    document.getElementById("s-time-note").textContent = "Assumes " + d.minutes_per_case + " min of manual work per case";
-    document.getElementById("s-money").textContent = "$" + d.defended_usd.toLocaleString(undefined, { maximumFractionDigits: 2 });
-    document.getElementById("s-human").textContent = d.human_flagged;
+    $("s-analyzed").textContent = d.analyzed;
+    $("s-time").textContent = fmtMinutes(d.minutes_saved);
+    $("s-time-note").textContent = "Assumes " + d.minutes_per_case + " min of manual work per case";
+    $("s-money").textContent = "$" + d.defended_usd.toLocaleString(undefined, { maximumFractionDigits: 2 });
+    $("s-human").textContent = d.human_flagged;
   } catch (e) {}
 }
 
@@ -433,13 +437,13 @@ function refreshPanels() {
 function selectDispute(row) {
   selectedRow = row;
   lastResult = null;
-  document.getElementById("selected").innerHTML =
+  $("selected").innerHTML =
     "<b>" + esc(row.dispute_id) + "</b> &nbsp;|&nbsp; " + esc(prettyReason(row.reason)) +
     " &nbsp;|&nbsp; " + esc(row.amount) + " &nbsp;|&nbsp; " + esc(dueInfo(row.due).text) +
     " &nbsp;|&nbsp; " + esc(row.source);
-  document.getElementById("analyzeBtn").disabled = false;
-  document.getElementById("result").style.display = "none";
-  document.getElementById("empty").style.display = "block";
+  $("analyzeBtn").disabled = false;
+  $("result").style.display = "none";
+  $("empty").style.display = "block";
 }
 
 async function loadDisputes() {
@@ -449,7 +453,7 @@ async function loadDisputes() {
     allRows = await r.json();
     gridApi.setGridOption("rowData", allRows);
     const urgent = allRows.filter((x) => { const d = dueInfo(x.due).days; return d !== null && d <= 2; }).length;
-    document.getElementById("s-open-note").textContent = allRows.length + " open cases · " + urgent + " due within 2 days";
+    $("s-open-note").textContent = allRows.length + " open cases · " + urgent + " due within 2 days";
   } catch (err) {
     toast("Could not load disputes: " + err.message, true);
   }
@@ -457,7 +461,7 @@ async function loadDisputes() {
 
 /* ---------- Buyer's lawyer panel ---------- */
 function renderStress(st) {
-  const el = document.getElementById("stressBody");
+  const el = $("stressBody");
   if (!st) {
     el.innerHTML = '<div class="stress-line" style="color:#6b7690">Stress test not run for this case (no records to test, or the AI was unavailable).</div>';
     return;
@@ -474,46 +478,93 @@ function renderStress(st) {
   el.innerHTML = h;
 }
 
-/* ---------- Fight or fold calculator ---------- */
-function recalcCalc() {
+/* ---------- What-if scenario simulator ---------- */
+function recalcSim() {
   if (!lastResult || !selectedRow) return;
+
   const A = parseFloat(selectedRow.amount) || 0;
-  const p = Math.min(1, Math.max(0, Number(lastResult.win_probability) || 0));
-  const T = Math.max(0, parseFloat(document.getElementById("c-time").value) || 0);
-  const F = Math.max(0, parseFloat(document.getElementById("c-fee").value) || 0);
+  const p = clamp(Number(lastResult.win_probability) || 0, 0, 1);
+  const T = Math.max(0, parseFloat($("c-time").value) || 0);
+  const F = Math.max(0, parseFloat($("c-fee").value) || 0);
+  const D = Math.max(0, parseFloat($("c-day").value) || 0);
+  const r = clamp((parseFloat($("s-pct").value) || 50) / 100, 0, 1);
+  const q = clamp((parseFloat($("s-acc").value) || 0) / 100, 0, 1);
+  $("s-pct-label").textContent = pct(r);
 
-  const evFold = -A;
-  const evFight = -(1 - p) * (A + F) - T;
-  const edge = evFight - evFold;
-  const breakEven = A + F > 0 ? (T + F) / (A + F) : 0;
-  const fightBest = edge > 0;
-  const close = Math.abs(edge) < Math.max(2, A * 0.1);
+  const plan = lastResult.evidence_plan || { items: [], days_needed: 0, win_boost: 0 };
+  const notes = lastResult.scenario_notes || {};
+  const daysLeft = selectedRow.due ? (new Date(selectedRow.due) - Date.now()) / 86400000 : null;
 
-  document.getElementById("c-fold").textContent = money(evFold);
-  document.getElementById("c-fight").textContent = money(evFight);
-  document.getElementById("c-fight-n").textContent = "expected, at " + Math.round(p * 100) + "% win chance";
-  document.getElementById("c-fold-box").className = "calc" + (!close && !fightBest ? " best" : "");
-  document.getElementById("c-fight-box").className = "calc" + (!close && fightBest ? " best" : "");
+  const lossIfFight = (1 - p) * (A + F) + T;
+  const R = r * A;
+  const p2 = Math.min(0.9, p + (Number(plan.win_boost) || 0));
+  const days = Number(plan.days_needed) || 0;
+  const possible = daysLeft === null || (daysLeft >= 0 && days <= daysLeft);
+  const worth = (plan.items || []).length > 0 && (Number(plan.win_boost) || 0) > 0;
 
-  const aiSide = lastResult.strategy === "fight" ? "fight" : "refund";
-  const calcSide = fightBest ? "fight" : "refund";
-  document.getElementById("c-verdict").textContent = close
-    ? "Too close to call: the maths differs by only about $" + Math.abs(edge).toFixed(2) + ". Decide on risk and the customer relationship."
-    : fightBest
-      ? "Fighting is worth it: about " + money(edge) + " better than refunding, on average."
-      : "Refunding is cheaper: fighting is about $" + Math.abs(edge).toFixed(2) + " worse than refunding, on average.";
-  document.getElementById("c-hint").textContent =
-    "Break-even: fighting only pays off if the win chance is above " + Math.round(Math.min(breakEven, 1) * 100) + "%. " +
-    (close ? "" : aiSide === calcSide ? "Matches the AI's recommendation. " : "Differs from the AI's recommendation, so review carefully. ") +
-    "Win chance is an AI estimate, not a guarantee.";
+  const cards = [
+    {
+      key: "fight", title: "Fight it", ev: -lossIfFight,
+      sub: "at " + pct(p) + " win chance",
+    },
+    {
+      key: "partial_refund", title: "Partial refund (" + pct(r) + ")",
+      ev: -(q * R) - (1 - q) * lossIfFight,
+      sub: "if the buyer accepts " + pct(q) + " of the time; otherwise you fight",
+    },
+    {
+      key: "accept", title: "Full refund", ev: -A,
+      sub: "certain loss, no effort",
+    },
+    {
+      key: "wait", title: "Wait & collect evidence",
+      ev: worth && possible ? -((1 - p2) * (A + F) + T + days * D) : null,
+      sub: !worth
+        ? "Nothing more worth collecting: the records already hold the key proof"
+        : possible
+          ? "win chance " + pct(p) + " → " + pct(p2) + ", about " + days + " day(s) of work"
+          : "Not possible in time: needs about " + days + " day(s), deadline " +
+            (daysLeft === null ? "unknown" : daysLeft < 0 ? "passed" : "in " + daysLeft.toFixed(1) + " days"),
+    },
+  ];
+
+  const avail = cards.filter((c) => c.ev !== null).sort((a, b) => b.ev - a.ev);
+  const best = avail[0];
+  const second = avail[1];
+  const close = !!second && best.ev - second.ev < Math.max(2, A * 0.1);
+
+  $("simGrid").innerHTML = cards.map((c) => {
+    const n = notes[c.key] || {};
+    const cls = "scard" + (!close && c === best ? " best" : "") + (c.ev === null ? " off" : "");
+    const collect = c.key === "wait" && worth
+      ? '<div class="rk"><b>Collect:</b> ' + esc(plan.items.join("; ")) + "</div>"
+      : "";
+    return '<div class="' + cls + '"><h4>' + esc(c.title) + '</h4><div class="big">' +
+      (c.ev === null ? "Unavailable" : money(c.ev)) + '</div><div class="n">' + esc(c.sub) + "</div>" +
+      (n.risk ? '<div class="rk"><b>Risk:</b> ' + esc(n.risk) + "</div>" : "") +
+      (n.next_step ? '<div class="rk"><b>Next step:</b> ' + esc(n.next_step) + "</div>" : "") +
+      collect + "</div>";
+  }).join("");
+
+  $("s-verdict").textContent = close
+    ? "Too close to call between \"" + best.title + "\" and \"" + second.title + "\" (about $" +
+      (best.ev - second.ev).toFixed(2) + " apart). Decide on risk and the customer relationship."
+    : "Best on the numbers: " + best.title + ", about $" + (best.ev - (second ? second.ev : best.ev)).toFixed(2) +
+      " better than the next best option" + (second ? " (" + second.title + ")." : ".");
+
+  const aiKey = lastResult.strategy === "fight" ? "fight" : "accept";
+  const differs = !close && best.key !== aiKey;
+  $("s-hint").textContent =
+    "AI recommends: " + (STRATEGY_LABEL[lastResult.strategy] || lastResult.strategy) + ". " +
+    (close ? "" : differs ? "The numbers favour a different option, so review carefully. " : "This matches the numbers. ") +
+    "Win chance, acceptance chance and evidence boost are estimates, not statistics.";
 }
-document.getElementById("c-time").addEventListener("input", recalcCalc);
-document.getElementById("c-fee").addEventListener("input", recalcCalc);
+["c-time", "c-fee", "c-day", "s-pct", "s-acc"].forEach((id) => $(id).addEventListener("input", recalcSim));
 
 /* ---------- Analyze one case ---------- */
-document.getElementById("analyzeBtn").onclick = async () => {
+$("analyzeBtn").onclick = async () => {
   if (!selectedRow) return;
-  const btn = document.getElementById("analyzeBtn");
+  const btn = $("analyzeBtn");
   btn.disabled = true;
   btn.innerHTML = '<span class="spinner"></span>Analyzing and stress-testing...';
   try {
@@ -522,21 +573,21 @@ document.getElementById("analyzeBtn").onclick = async () => {
     const res = await r.json();
     lastResult = res;
 
-    const s = document.getElementById("strategy");
+    const s = $("strategy");
     s.textContent = STRATEGY_LABEL[res.strategy] || res.strategy;
     s.className = "strategy " + res.strategy;
 
-    const pct = Math.round((res.confidence || 0) * 100);
-    document.getElementById("confText").textContent = pct + "%";
-    const bar = document.getElementById("confBar");
-    bar.className = pct >= 75 ? "good" : pct >= 50 ? "mid" : "low";
-    bar.style.width = pct + "%";
+    const p = Math.round((res.confidence || 0) * 100);
+    $("confText").textContent = p + "%";
+    const bar = $("confBar");
+    bar.className = p >= 75 ? "good" : p >= 50 ? "mid" : "low";
+    bar.style.width = p + "%";
 
-    document.getElementById("human").style.display = res.needs_human_review ? "block" : "none";
-    document.getElementById("reasoning").textContent = res.reasoning;
+    $("human").style.display = res.needs_human_review ? "block" : "none";
+    $("reasoning").textContent = res.reasoning;
     renderStress(res.stress_test);
 
-    const ul = document.getElementById("evidence");
+    const ul = $("evidence");
     ul.innerHTML = "";
     const items = res.evidence_used || [];
     if (!items.length) {
@@ -550,10 +601,10 @@ document.getElementById("analyzeBtn").onclick = async () => {
       ul.appendChild(li);
     });
 
-    document.getElementById("draft").value = res.draft_message;
-    document.getElementById("empty").style.display = "none";
-    document.getElementById("result").style.display = "block";
-    recalcCalc();
+    $("draft").value = res.draft_message;
+    $("empty").style.display = "none";
+    $("result").style.display = "block";
+    recalcSim();
     refreshPanels();
   } catch (err) {
     toast("AI step failed: " + err.message, true);
@@ -563,14 +614,14 @@ document.getElementById("analyzeBtn").onclick = async () => {
 };
 
 /* ---------- Approve and send ---------- */
-document.getElementById("sendBtn").onclick = async () => {
+$("sendBtn").onclick = async () => {
   if (!selectedRow) return;
   if (!confirm("Send this message to PayPal?")) return;
   try {
     const r = await fetch("/api/send/" + selectedRow.dispute_id, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ message: document.getElementById("draft").value }),
+      body: JSON.stringify({ message: $("draft").value }),
     });
     if (!r.ok) throw new Error(await r.text());
     const out = await r.json();
@@ -583,25 +634,25 @@ document.getElementById("sendBtn").onclick = async () => {
 };
 
 /* ---------- Autopilot ---------- */
-document.getElementById("autoBtn").onclick = async () => {
-  const btn = document.getElementById("autoBtn");
+$("autoBtn").onclick = async () => {
+  const btn = $("autoBtn");
   const allowed = [];
-  if (document.getElementById("r-fight").checked) allowed.push("fight");
-  if (document.getElementById("r-refund").checked) allowed.push("offer_refund");
-  if (document.getElementById("r-accept").checked) allowed.push("accept");
+  if ($("r-fight").checked) allowed.push("fight");
+  if ($("r-refund").checked) allowed.push("offer_refund");
+  if ($("r-accept").checked) allowed.push("accept");
   if (!allowed.length) { toast("Allow at least one strategy.", true); return; }
 
   const rules = {
-    max_amount: parseFloat(document.getElementById("r-max").value) || 0,
-    min_confidence: (parseFloat(document.getElementById("r-conf").value) || 0) / 100,
+    max_amount: parseFloat($("r-max").value) || 0,
+    min_confidence: (parseFloat($("r-conf").value) || 0) / 100,
     allowed: allowed,
-    include_live: document.getElementById("r-live").checked,
+    include_live: $("r-live").checked,
   };
   if (rules.include_live &&
       !confirm("Live PayPal sandbox cases that pass the guardrails will be sent automatically. Continue?")) return;
 
-  const box = document.getElementById("autoResults");
-  const summary = document.getElementById("autoSummary");
+  const box = $("autoResults");
+  const summary = $("autoSummary");
   box.innerHTML = "";
   summary.textContent = "";
   btn.disabled = true;
@@ -659,7 +710,7 @@ async function tryLogin(pass) {
 }
 
 function boot() {
-  document.getElementById("lock").style.display = "none";
+  $("lock").style.display = "none";
   loadDisputes();
   refreshPanels();
 }
@@ -668,20 +719,20 @@ async function start() {
   const info = await (await _fetch("/api/auth-required")).json();
   if (!info.required) return boot();
   if (await tryLogin(sessionStorage.getItem("passcode") || "")) return boot();
-  document.getElementById("lock").style.display = "grid";
+  $("lock").style.display = "grid";
 }
 
 async function submitLock() {
-  const pass = document.getElementById("lockInput").value;
+  const pass = $("lockInput").value;
   if (await tryLogin(pass)) {
     sessionStorage.setItem("passcode", pass);
     boot();
   } else {
-    document.getElementById("lockErr").textContent = "Wrong passcode, try again.";
+    $("lockErr").textContent = "Wrong passcode, try again.";
   }
 }
-document.getElementById("lockBtn").onclick = submitLock;
-document.getElementById("lockInput").addEventListener("keydown", (e) => { if (e.key === "Enter") submitLock(); });
+$("lockBtn").onclick = submitLock;
+$("lockInput").addEventListener("keydown", (e) => { if (e.key === "Enter") submitLock(); });
 
 start();
 </script>
