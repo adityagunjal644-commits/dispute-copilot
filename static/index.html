@@ -164,7 +164,16 @@
   @media (max-width: 560px) {
     .sim-grid { grid-template-columns: 1fr; }
   }
+  /* Evidence integrity */
+  .find { border-left: 4px solid #e3e8f1; padding: 8px 0 8px 12px; margin-top: 10px; }
+  .find.high { border-left-color: var(--red); }
+  .find.medium { border-left-color: var(--amber); }
+  .find .t { font-weight: 700; font-size: 14px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .find .d { font-size: 13.5px; line-height: 1.5; margin-top: 4px; }
+  .find .m { font-size: 12.5px; color: var(--muted); margin-top: 3px; line-height: 1.45; }
+  .reco { margin-top: 12px; padding: 10px 12px; border-radius: 10px; background: var(--blue-soft); font-size: 13.5px; font-weight: 600; line-height: 1.5; }
 </style>
+
 </head>
 <body>
 
@@ -242,6 +251,10 @@
             <div class="conf-row"><span>Confidence</span><b id="confText"></b></div>
             <div class="bar"><div id="confBar" style="width:0"></div></div>
             <div class="human" id="human">⚠ Human review needed before sending</div>
+          </div>
+          <div class="box gap">
+            <div class="label">Evidence integrity check</div>
+            <div id="integrityBody"></div>
           </div>
           <div class="box gap">
             <div class="label">Buyer's lawyer (stress test)</div>
@@ -477,7 +490,31 @@ function renderStress(st) {
        (st.draft_changed ? " · draft rewritten to answer these points" : " · draft already solid") + "</div>";
   el.innerHTML = h;
 }
-
+/* ---------- Evidence integrity panel ---------- */
+function renderIntegrity(g) {
+  const el = $("integrityBody");
+  if (!g || !g.sources || !g.sources.length) {
+    el.innerHTML = '<div class="stress-line" style="color:#6b7690">No records to compare for this case.</div>';
+    return;
+  }
+  const head = g.count
+    ? chip(g.count + (g.count === 1 ? " discrepancy" : " discrepancies") + " found", g.high ? "red" : "amber")
+    : chip("No contradictions found", "green");
+  let h = head + '<div class="stress-line" style="margin-top:8px;color:#6b7690">Compared ' +
+    g.sources.length + " sources: " + esc(g.sources.join(", ")) + "</div>";
+  (g.findings || []).forEach((f) => {
+    h += '<div class="find ' + esc(f.severity) + '"><div class="t">' + esc(f.title) + " " +
+      chip(f.severity === "high" ? "High" : "Medium", f.severity === "high" ? "red" : "amber") + "</div>" +
+      '<div class="d">' + esc(f.detail) + "</div>" +
+      '<div class="m">Sources: ' + esc((f.sources || []).join(" vs ")) + " · Check: " + esc(f.check) + "</div></div>";
+  });
+  h += '<div class="reco">Recommended action: ' + esc(g.recommended_action) + "</div>";
+  if (g.penalty) {
+    h += '<div class="stress-line" style="margin-top:8px">Confidence after this check: <b>' +
+      Math.round(g.confidence_before * 100) + "%</b> → <b>" + Math.round(g.confidence_after * 100) + "%</b></div>";
+  }
+  el.innerHTML = h;
+}
 /* ---------- What-if scenario simulator ---------- */
 function recalcSim() {
   if (!lastResult || !selectedRow) return;
@@ -485,7 +522,7 @@ function recalcSim() {
   const A = parseFloat(selectedRow.amount) || 0;
   const p = clamp(Number(lastResult.win_probability) || 0, 0, 1);
   const T = Math.max(0, parseFloat($("c-time").value) || 0);
-  const F = Math.max(0, parseFloat($("c-fee").value) || 0);
+  const F = 0; // no separate fee input
   const D = Math.max(0, parseFloat($("c-day").value) || 0);
   const r = clamp((parseFloat($("s-pct").value) || 50) / 100, 0, 1);
   const q = clamp((parseFloat($("s-acc").value) || 0) / 100, 0, 1);
@@ -559,7 +596,7 @@ function recalcSim() {
     (close ? "" : differs ? "The numbers favour a different option, so review carefully. " : "This matches the numbers. ") +
     "Win chance, acceptance chance and evidence boost are estimates, not statistics.";
 }
-["c-time", "c-fee", "c-day", "s-pct", "s-acc"].forEach((id) => $(id).addEventListener("input", recalcSim));
+["c-time", "c-day", "s-pct", "s-acc"].forEach((id) => { const e = $(id); if (e) e.addEventListener("input", recalcSim); });
 
 /* ---------- Analyze one case ---------- */
 $("analyzeBtn").onclick = async () => {
@@ -586,6 +623,7 @@ $("analyzeBtn").onclick = async () => {
     $("human").style.display = res.needs_human_review ? "block" : "none";
     $("reasoning").textContent = res.reasoning;
     renderStress(res.stress_test);
+    renderIntegrity(res.integrity);
 
     const ul = $("evidence");
     ul.innerHTML = "";

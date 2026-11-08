@@ -24,6 +24,7 @@ DEMO_DISPUTES = [
     _d("DEMO-1003", "MERCHANDISE_OR_SERVICE_NOT_AS_DESCRIBED", "75.50", "2026-10-30T14:15:00Z", "DEMO-TXN-3", 4),
     _d("DEMO-1004", "UNAUTHORISED", "260.00", "2026-10-30T18:45:00Z", "DEMO-TXN-4", 2),
     _d("DEMO-1005", "MERCHANDISE_OR_SERVICE_NOT_RECEIVED", "32.00", "2026-10-31T07:20:00Z", "DEMO-TXN-5", 6),
+    _d("DEMO-1006", "MERCHANDISE_OR_SERVICE_NOT_RECEIVED", "89.00", "2026-10-22T11:00:00Z", "DEMO-TXN-6", 5),
 ]
 
 DEMO_EVIDENCE = {
@@ -52,5 +53,12 @@ DEMO_EVIDENCE = {
         "courier": "India Post", "tracking_number": "IP778899", "tracking_status": "DELIVERED",
         "delivered_on": "2026-10-29", "delivery_proof": "Delivered to neighbour, signature unreadable",
         "customer_messages": ["2026-10-30: Buyer says they never saw the parcel"],
+    },
+    "DEMO-TXN-6": {
+        "item": "Gaming keyboard", "ordered_on": "2026-10-18", "shipped_on": "2026-10-19",
+        "courier": "Ecom Express", "tracking_number": "EE445566", "tracking_status": "DELIVERED",
+        "delivered_on": "2026-10-23", "delivery_proof": "Left at front desk, signature unreadable",
+        "courier_tracking": {"status": "DELIVERED", "delivered_on": "2026-10-26", "tracking_number": "EE445566"},
+        "customer_messages": ["2026-10-22: Buyer says nothing has arrived"],
     },
 }

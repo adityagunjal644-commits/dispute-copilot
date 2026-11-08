@@ -38,6 +38,7 @@ Rules for the decision:
 - Set needs_human_review to true whenever confidence is below 0.7.
 - The draft_message must match the strategy. For "offer_refund", it must clearly offer a full refund of the dispute amount. For "fight", it must present the evidence. For "accept", it must agree to refund. Never promise a future update instead of taking the chosen action.
 - For "offer_refund" and "accept", the draft_message must be short, friendly and neutral. It must not describe weaknesses in the merchant's own records (such as unreadable signatures, delivery to a neighbour, missing proof or delays). Just apologise briefly, offer the refund, and thank the buyer. For "fight", present only the strongest evidence.
+- If the MERCHANT RECORDS contain "integrity_findings_from_code", those are contradictions found by automated checks. Do not state in the draft_message any fact that a finding contradicts. In "reasoning", mention the most serious finding. For "fight", only rely on facts that no finding contradicts.
 
 Reply with JSON only, using exactly these keys:
 - "strategy": one of "fight", "offer_refund", "accept"

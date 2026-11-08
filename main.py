@@ -14,6 +14,7 @@ from real_evidence import build_real_evidence
 from evidence import get_evidence
 from ai_draft import draft_response
 from demo_data import DEMO_DISPUTES, DEMO_EVIDENCE
+from integrity import check_integrity
 
 try:
     from paypal_client import get_tracking
@@ -24,8 +25,8 @@ load_dotenv()
 
 app = FastAPI(
     title="AI Dispute Copilot API",
-    description="Fetches PayPal disputes, gathers evidence from PayPal and merchant records, asks an AI for a recommendation, stress-tests it with a buyer's-lawyer review, and sends the approved reply back through the PayPal Disputes API. Includes a guardrail-based autopilot and an audit log.",
-    version="1.1.0",
+    description="Fetches PayPal disputes, gathers evidence from PayPal and merchant records, checks the evidence for contradictions, asks an AI for a recommendation, stress-tests it with a buyer's-lawyer review, and sends the approved reply back through the PayPal Disputes API. Includes a guardrail-based autopilot and an audit log.",
+    version="1.2.0",
 )
 
 LOG_FILE = "audit_log.json"
@@ -131,8 +132,23 @@ def real_rows():
     return rows
 
 
+def apply_integrity(result, findings):
+    """Lower confidence by a fixed amount per finding and force human review if serious."""
+    before = result["confidence"]
+    pen = findings["penalty"]
+    if pen:
+        result["confidence"] = round(max(0.05, before - pen), 2)
+        result["win_probability"] = round(max(0.0, result["win_probability"] - pen), 2)
+        if findings["high"] or result["confidence"] < 0.7:
+            result["needs_human_review"] = True
+    out = dict(findings)
+    out["confidence_before"] = before
+    out["confidence_after"] = result["confidence"]
+    result["integrity"] = out
+
+
 def analyze_case(dispute_id):
-    """Fetch the case, gather evidence, ask the AI. Returns (result, dispute)."""
+    """Fetch the case, gather evidence, check it, ask the AI. Returns (result, dispute)."""
     if is_demo(dispute_id):
         d = next(x for x in DEMO_DISPUTES if x["dispute_id"] == dispute_id)
         txns = d.get("disputed_transactions") or [{}]
@@ -162,6 +178,16 @@ def analyze_case(dispute_id):
         }
         has_records = store is not None
 
+    findings = check_integrity(d, evidence)
+
+    ai_evidence = evidence
+    if evidence and findings["count"]:
+        ai_evidence = dict(evidence)
+        ai_evidence["integrity_findings_from_code"] = [
+            {"title": f["title"], "severity": f["severity"], "detail": f["detail"]}
+            for f in findings["findings"]
+        ]
+
     slim = {
         "dispute_id": dispute_id,
         "reason": d.get("reason"),
@@ -170,13 +196,20 @@ def analyze_case(dispute_id):
         "amount": d.get("dispute_amount"),
         "created": d.get("create_time"),
     }
-    result = draft_response(slim, evidence)
+    result = draft_response(slim, ai_evidence)
     result["evidence_found"] = has_records
+    apply_integrity(result, findings)
     return result, d
 
 
 def log_analysis(dispute_id, result, d):
     st = result.get("stress_test") or {}
+    ig = result.get("integrity") or {}
+    notes = []
+    if st:
+        notes.append("Stress test: " + st["severity"] + " risk")
+    if ig.get("count"):
+        notes.append(str(ig["count"]) + " evidence discrepancy(ies)")
     add_log({
         "action": "AI analyzed",
         "dispute_id": dispute_id,
@@ -185,7 +218,7 @@ def log_analysis(dispute_id, result, d):
         "needs_human_review": result.get("needs_human_review", False),
         "amount": (d.get("dispute_amount") or {}).get("value"),
         "source": "Demo data" if is_demo(dispute_id) else "PayPal sandbox",
-        "note": ("Stress test: " + st["severity"] + " risk") if st else "",
+        "note": "; ".join(notes),
     })
 
 
@@ -205,6 +238,10 @@ def check_guardrails(result, amount, rules):
         reasons.append("AI asked for human review")
     if not result.get("evidence_found"):
         reasons.append("no merchant records found")
+    integ = result.get("integrity") or {}
+    if integ.get("high"):
+        first = next((f for f in integ.get("findings", []) if f["severity"] == "high"), None)
+        reasons.append("evidence contradiction: " + (first["title"] if first else "serious finding"))
     return reasons
 
 
