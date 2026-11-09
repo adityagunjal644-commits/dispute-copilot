@@ -180,5 +180,13 @@ def check_integrity(dispute, evidence):
             f"Merchant records show ${m_amt:.2f} but the PayPal transaction shows ${p_amt:.2f}.",
             ["Merchant records", "PayPal transaction"],
             "Verify the order total against the PayPal payment"))
-
+    txn_date = _date(txn.get("date"))
+    if txn_date:
+        for label, d in (("Shipping", shipped), ("Delivery", delivered)):
+            if d and d < txn_date:
+                out.append(_finding(
+                    f"{label} recorded before payment", "high",
+                    f"Merchant records show {label.lower()} on {d}, but the PayPal payment was made on {txn_date}.",
+                    ["Merchant records", "PayPal transaction"],
+                    "Verify the order, payment and shipping dates in your order system"))
     return _summary(out, sources)
