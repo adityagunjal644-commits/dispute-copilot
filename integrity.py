@@ -98,8 +98,8 @@ def check_integrity(dispute, evidence):
         sources.append(ext_name)
     if txn:
         sources.append("PayPal transaction")
-    if records.get("customer_messages") or paypal.get("buyer_complaint_messages"):
-        sources.append("Buyer messages")
+    # if records.get("customer_messages") or paypal.get("buyer_complaint_messages"):
+    #     sources.append("Buyer messages")
     if dispute.get("create_time"):
         sources.append("Dispute timeline")
 

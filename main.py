@@ -251,7 +251,7 @@ def api_disputes():
     rows = []
     try:
         rows += real_rows()
-    except SystemExit as e:
+    except (Exception, SystemExit) as e:
         print("PayPal list failed:", e)
     rows += [to_row(d, "Demo data") for d in DEMO_DISPUTES]
     return rows

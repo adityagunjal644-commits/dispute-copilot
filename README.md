@@ -6,7 +6,7 @@ Built for the PayPal AI Hackathon. Created during the submission period (started
 
 ## Live demo
 
-- URL: https://YOUR-APP.onrender.com
+- URL: https://dispute-copilot-wx2h.onrender.com
 - Passcode: provided in the Devpost testing instructions
 - The first load can take up to a minute, because the free hosting tier sleeps when idle.
 
